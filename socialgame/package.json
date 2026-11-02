@@ -1,0 +1,27 @@
+{
+  "name": "teste",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:all": "vite",
+    "dev:full": "docker compose -f ../incident-management-system/docker-compose.yml up -d && vite --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "docker:up": "cmd /c \"cd /d C:\\Users\\FLIP(Filipin)\\OneDrive - SENAC DF\\Área de Trabalho\\portfolio js\\incident-management-system && docker-compose up -d\"",
+    "start:all": "concurrently -n \"DOCKER,GAME\" -c \"cyan,magenta\" \"npm run docker:up\" \"npm run dev\""
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "autoprefixer": "^10.4.14",
+    "concurrently": "^8.2.2",
+    "postcss": "^8.4.24",
+    "tailwindcss": "^3.3.2",
+    "vite": "^4.3.9"
+  }
+}

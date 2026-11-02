@@ -9,6 +9,7 @@ const ROOM_ASSETS = {
   wall: "/assets/wall.png",
 };
 
+// Sprites Parados (0 a 7)
 const AVATAR_IDLE_SPRITES = {
   0: "/assets/persona/avatarimage0.png",
   1: "/assets/persona/avatarimage1.png",
@@ -20,10 +21,78 @@ const AVATAR_IDLE_SPRITES = {
   7: "/assets/persona/avatarimage7.png",
 };
 
+// Sprites de Caminhada (0 a 7)
+const AVATAR_WALK_SPRITES = {
+  0: "/assets/persona/avatarimage0.png",
+  1: "/assets/persona/avatarimage1.png",
+  2: "/assets/persona/avatarimage2.png",
+  3: "/assets/persona/avatarimage3.png",
+  4: "/assets/persona/avatarimage4.png",
+  5: "/assets/persona/avatarimage5.png",
+  6: "/assets/persona/avatarimage6.png",
+  7: "/assets/persona/avatarimage7.png",
+};
+
+function getDirection(from, to) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+
+  if (dx === 0 && dy < 0) return 0; // Norte
+  if (dx > 0 && dy < 0) return 1;  // Nordeste
+  if (dx > 0 && dy === 0) return 2; // Leste
+  if (dx > 0 && dy > 0) return 3;  // Sudeste
+  if (dx === 0 && dy > 0) return 4; // Sul
+  if (dx < 0 && dy > 0) return 5;  // Sudoeste
+  if (dx < 0 && dy === 0) return 6; // Oeste
+  if (dx < 0 && dy < 0) return 7;  // Noroeste
+
+  return 4;
+}
+
+function findPath(start, target, gridRows, gridCols) {
+  const queue = [[start]];
+  const visited = new Set();
+  visited.add(`${start.x},${start.y}`);
+
+  const directions = [
+    { x: 0, y: -1 },
+    { x: 0, y: 1 },
+    { x: -1, y: 0 },
+    { x: 1, y: 0 },
+  ];
+
+  while (queue.length > 0) {
+    const path = queue.shift();
+    const current = path[path.length - 1];
+
+    if (current.x === target.x && current.y === target.y) {
+      return path.slice(1);
+    }
+
+    for (const dir of directions) {
+      const nextX = current.x + dir.x;
+      const nextY = current.y + dir.y;
+      const key = `${nextX},${nextY}`;
+
+      const isWithinBounds = nextX >= 0 && nextX < gridCols && nextY >= 0 && nextY < gridRows;
+
+      if (isWithinBounds && !visited.has(key)) {
+        visited.add(key);
+        queue.push([...path, { x: nextX, y: nextY }]);
+      }
+    }
+  }
+
+  return [];
+}
+
 export default function App() {
-  const [isRootUser, setIsRootUser] = useState(() => isAuthenticated());
+  const [isRootUser] = useState(() => isAuthenticated());
   const [roomSize] = useState({ rows: 9, cols: 9 });
   const [avatarPos, setAvatarPos] = useState({ x: 1, y: 1 });
+  const [avatarDir, setAvatarDir] = useState(4);
+  const [currentPath, setCurrentPath] = useState([]);
+  const [isWalking, setIsWalking] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
 
   const getIsoCoords = (x, y) => {
@@ -38,21 +107,52 @@ export default function App() {
     setZoomLevel((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 2.0));
   };
 
+  const handleTileClick = (targetX, targetY) => {
+    const path = findPath(avatarPos, { x: targetX, y: targetY }, roomSize.rows, roomSize.cols);
+    if (path.length > 0) {
+      setCurrentPath(path);
+      setIsWalking(true);
+    }
+  };
+
+  // Loop de movimento do avatar tile a tile
+  useEffect(() => {
+    if (currentPath.length === 0) {
+      setIsWalking(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const nextStep = currentPath[0];
+      const nextDir = getDirection(avatarPos, nextStep);
+      setAvatarDir(nextDir);
+      setIsWalking(true);
+
+      setAvatarPos(nextStep);
+      setCurrentPath((prev) => prev.slice(1));
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [currentPath, avatarPos]);
+
   const { x: avatarPX, y: avatarPY } = getIsoCoords(avatarPos.x, avatarPos.y);
   const cornerIso = getIsoCoords(0, 0);
+
+  const currentAvatarSprite = isWalking
+    ? (AVATAR_WALK_SPRITES[avatarDir] || AVATAR_IDLE_SPRITES[avatarDir])
+    : AVATAR_IDLE_SPRITES[avatarDir];
 
   return (
     <div className="w-full h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden select-none">
       
-      {/* BARRA SUPERIOR BASE */}
       <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-30 shadow-md">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-xl text-white shadow-lg">
             H
           </div>
           <div>
-            <h1 className="font-bold text-sm text-slate-100 tracking-wide">Habbo Studio - Base</h1>
-            <p className="text-xs text-slate-400">Passo 1: Motor Isométrico Base</p>
+            <h1 className="font-bold text-sm text-slate-100 tracking-wide">Habbo Studio - Passo 2</h1>
+            <p className="text-xs text-slate-400">Pathfinding BFS & Animação de Caminhada</p>
           </div>
         </div>
         <div className="text-xs font-mono text-indigo-400">
@@ -60,7 +160,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* ÁREA DA SALA */}
       <main 
         onWheel={handleWheelZoom}
         className="flex-1 relative flex items-center justify-center bg-slate-950 overflow-hidden cursor-grab"
@@ -121,7 +220,7 @@ export default function App() {
               return (
                 <div
                   key={`floor-${x}-${y}`}
-                  onClick={() => setAvatarPos({ x, y })}
+                  onClick={() => handleTileClick(x, y)}
                   className="absolute cursor-pointer group hover:scale-105"
                   style={{
                     left: `${posX - TILE_WIDTH / 2}px`,
@@ -142,9 +241,9 @@ export default function App() {
             })
           )}
 
-          {/* AVATAR BASE */}
+          {/* AVATAR COM PATHFINDING */}
           <div
-            className="absolute pointer-events-none flex flex-col items-center justify-end"
+            className="absolute pointer-events-none transition-all duration-280 ease-linear flex flex-col items-center justify-end"
             style={{
               left: `${avatarPX - 32}px`,
               top: `${avatarPY - 60}px`,
@@ -155,7 +254,7 @@ export default function App() {
           >
             <div className="absolute bottom-1 w-8 h-2.5 rounded-full bg-black/70 blur-[1px]" />
             <img
-              src={AVATAR_IDLE_SPRITES[4]}
+              src={currentAvatarSprite}
               alt="Avatar"
               className="w-full h-full object-contain relative z-10"
               style={{ imageRendering: 'pixelated' }}

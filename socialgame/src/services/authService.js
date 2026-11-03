@@ -1,36 +1,48 @@
-// Chave utilizada para guardar o token de sessão no navegador
-const TOKEN_KEY = 'habbo_jwt_token';
+export const SESSION_TOKEN_KEY = 'habbo_jwt_token';
 
-/**
- * Guarda o Token JWT recebido após a autenticação bem-sucedida.
- */
+export const ALLOWED_ANGULAR_ORIGINS = Object.freeze([
+  'http://localhost:4200',
+  'http://127.0.0.1:4200',
+]);
+
 export function setSessionToken(token) {
   if (token && token !== 'undefined' && token !== 'null') {
-    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(SESSION_TOKEN_KEY, token);
   }
 }
 
-/**
- * Recupera o Token JWT atual para enviar nas requisições HTTP.
- */
 export function getSessionToken() {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(SESSION_TOKEN_KEY);
   if (!token || token === 'undefined' || token === 'null') {
     return null;
   }
-  return token
-}
-/**
- * Remove o token ao fazer logout.
- */
-export function clearSession() {
-  localStorage.removeItem(TOKEN_KEY);
+  return token;
 }
 
-/**
- * Verifica se existe uma sessão ativa com token.
- */
 export function isAuthenticated() {
   const token = getSessionToken();
   return !!token; // Retorna true se o token existir
+}
+
+export function clearSession({ all = false } = {}) {
+  if (all) {
+    localStorage.clear();
+  } else {
+    localStorage.removeItem(SESSION_TOKEN_KEY);
+  }
+}
+
+export function extractLoginToken(data) {
+  if (!data || typeof data !== 'object' || data.type !== 'LOGIN_SUCCESS') return null;
+  
+  const token = data.token ?? data.jwtToken ?? data.accessToken ?? data.jwt ??
+    data.data?.token ?? data.data?.jwtToken ?? data.data?.accessToken ?? data.access_token ?? data.data?.access_token ??
+    data.payload?.token ?? (typeof data.data === 'string' ? data.data : null);
+    
+  return typeof token === 'string' && token.trim() && !['undefined', 'null'].includes(token)
+    ? token.trim() : null;
+}
+
+export function isTrustedAngularOrigin(origin) {
+  return ALLOWED_ANGULAR_ORIGINS.includes(origin);
 }

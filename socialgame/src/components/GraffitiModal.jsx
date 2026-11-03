@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-/* =========================================================
-   MODAL DO GRAFFITI (SEM MINIMIZAR)
-   ========================================================= */
-export default function GraffitiModal({ onClose, onSaveGraffiti, currentGraffiti, roomRows, triggerAchievement }) {
+
+export default function GraffitiModal({ onClose, onSaveGraffiti, currentGraffiti, roomRows, tileWidth = 64, tileHeight = 32, triggerAchievement }) {
   const canvasRef = useRef(null);
   const [color, setColor] = useState('#FF0000');
   const [brushSize, setBrushSize] = useState(16);
   const isDrawing = useRef(false);
 
-  const wallWidth = roomRows * (TILE_WIDTH / 2);
-  const wallHeightSlope = roomRows * (TILE_HEIGHT / 2) + 120;
+  const wallWidth = roomRows * (tileWidth / 2);
+  const wallHeightSlope = roomRows * (tileHeight / 2) + 120;
   
   const canvasWidth = 600;
   const canvasHeight = Math.round((wallHeightSlope / wallWidth) * canvasWidth);

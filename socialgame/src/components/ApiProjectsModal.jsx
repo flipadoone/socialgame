@@ -25,10 +25,7 @@ const RESUME_DATA = {
     '1. Nemolandia & Incident Manager',
     '   Plataforma social isométrica multiplayer em tempo real (React, Node.js WebSockets, Spring Boot, PostgreSQL) com controle de acesso RBAC e gestão de incidentes.',
     '',
-    '2. TalkToMe',
-    '   Assistente conversacional automatizado com agentes de IA e extensão Chrome para atendimento comercial.',
-    '',
-    '3. Bora (Mobilidade DF)',
+    '2. Bora (Mobilidade DF)',
     '   Protótipo de aplicativo mobile em React Native focado em deslocamentos comunitários seguros no Distrito Federal.',
   ],
   education: [

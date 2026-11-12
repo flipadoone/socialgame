@@ -1,47 +1,19 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: viaappia_incident_postgres
-    restart: unless-stopped
-
-    environment:
-      POSTGRES_DB: incident_management
-      POSTGRES_USER: viaappia
-      POSTGRES_PASSWORD: viaappia123
-
-    ports:
-      - "5432:5432"
-
-    volumes:
-      - viaappia_postgres_data:/var/lib/postgresql/data
-
-    networks:
-      - viaappia_network
-
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - pg_isready -U viaappia -d incident_management
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
 
-    container_name: viaappia_incident_backend
+    container_name: nemolandia_backend
     restart: unless-stopped
 
     environment:
-      DATABASE_URL: jdbc:postgresql://postgres:5432/incident_management
-      DATABASE_USERNAME: viaappia
-      DATABASE_PASSWORD: viaappia123
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       SERVER_PORT: 8080
-      JWT_SECRET: ${JWT_SECRET:-viaappia-incident-management-system-secret-key-minimum-32-characters}
-      CORS_ALLOWED_ORIGINS: http://localhost:4200,http://127.0.0.1:4200,http://localhost:5173,http://127.0.0.1:5173
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://127.0.0.1:4200,http://localhost:5173,http://127.0.0.1:5173}
       SEED_DEMO_USERS: ${SEED_DEMO_USERS:-true}
       HIBERNATE_SQL_LOG_LEVEL: info
       HIBERNATE_BIND_LOG_LEVEL: info
@@ -49,12 +21,8 @@ services:
     ports:
       - "8080:8080"
 
-    depends_on:
-      postgres:
-        condition: service_healthy
-
     networks:
-      - viaappia_network
+      - nemolandia_network
 
     healthcheck:
       test:
@@ -70,7 +38,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
 
-    container_name: viaappia_incident_frontend
+    container_name: nemolandia_frontend
     restart: unless-stopped
 
     ports:
@@ -81,7 +49,7 @@ services:
         condition: service_healthy
 
     networks:
-      - viaappia_network
+      - nemolandia_network
 
   room-server:
     build:
@@ -92,9 +60,7 @@ services:
 
     environment:
       ROOM_BEAT_PORT: 8787
-      # Precisa ser IGUAL ao JWT_SECRET do backend.
-      ROOM_JWT_SECRET: ${JWT_SECRET:-viaappia-incident-management-system-secret-key-minimum-32-characters}
-      # Origens (sites) autorizadas a abrir o chat. Em produção, coloque o endereço público do jogo.
+      ROOM_JWT_SECRET: ${JWT_SECRET}
       ROOM_ALLOWED_ORIGINS: ${ROOM_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
 
     ports:
@@ -104,15 +70,13 @@ services:
       - nemolandia_room_data:/data
 
     networks:
-      - viaappia_network
+      - nemolandia_network
 
 volumes:
-  viaappia_postgres_data:
-    name: viaappia_postgres_data
   nemolandia_room_data:
     name: nemolandia_room_data
 
 networks:
-  viaappia_network:
-    name: viaappia_network
+  nemolandia_network:
+    name: nemolandia_network
     driver: bridge

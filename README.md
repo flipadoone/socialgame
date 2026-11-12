@@ -52,8 +52,8 @@ O `docker compose` também sobe o **servidor da sala** (porta 8787, com volume p
 
 | Perfil | E-mail | Senha |
 |---|---|---|
-| Administrador (**root**) | `admin@viaappia.com` | `Admin@123` |
-| Leitor (jogador) | `leitor@viaappia.com` | `Leitor@123` |
+| Administrador (**root**) | `usuario@usuario.com` | `12345678` |
+| Leitor (jogador) | `leitor@user.com` | `12345678` |
 
 Qualquer pessoa também pode **criar conta** na tela de login (entra como jogador). Em produção, use `SEED_DEMO_USERS=false`.
 

@@ -1,0 +1,29 @@
+{
+  "name": "nemolandia",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:client": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server/roomServer.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^7.3.1"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

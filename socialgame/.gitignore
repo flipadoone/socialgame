@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.local
+# Sala salva pelo servidor multiplayer (dados em tempo de execução)
+server/data
+*.log
+.DS_Store

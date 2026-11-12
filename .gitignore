@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.angular/
+target/
+.env
+.env.local
+socialgame/server/data/
+*.log
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,859 @@
+<div class="workspace">
+  <header class="mural-header">
+    <div class="brand-board">
+      <span
+        class="brand-pin"
+        aria-hidden="true"
+      >
+        📌
+      </span>
+
+      <div>
+        <strong>Via Appia</strong>
+        <small>Mural de Demandas</small>
+      </div>
+    </div>
+
+    <div class="user-area">
+      <div class="user-information">
+        <strong>
+          {{ user?.name ?? 'Usuário' }}
+        </strong>
+
+        <small>
+          {{ user?.email ?? '' }}
+        </small>
+      </div>
+
+      <button
+        type="button"
+        class="logout-button"
+        (click)="logout()"
+      >
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <main class="content">
+    <section class="mural-title">
+      <div>
+        <span class="eyebrow">
+          QUADRO DE AVISOS
+        </span>
+
+        <h1>Demandas da equipe</h1>
+
+        <p>
+          Pedidos, problemas e tarefas pregados no mural.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="new-demand-button"
+        *ngIf="isAdmin"
+        (click)="openCreateModal()"
+      >
+        <span aria-hidden="true">+</span>
+        Nova demanda
+      </button>
+    </section>
+    <section class="stats-board">
+
+  <div
+    class="stats-loading"
+    *ngIf="statsLoading"
+  >
+    Carregando estatísticas...
+  </div>
+
+  <div
+    class="stats-error"
+    *ngIf="statsErrorMessage && !statsLoading"
+  >
+    {{ statsErrorMessage }}
+
+    <button
+      type="button"
+      class="retry-stats-button"
+      (click)="loadStats()"
+    >
+      Atualizar
+    </button>
+  </div>
+
+  <div
+    class="stats-grid"
+    *ngIf="!statsLoading && !statsErrorMessage"
+  >
+
+    <article class="stats-card total">
+      <span>Total</span>
+      <strong>{{ stats.total }}</strong>
+    </article>
+
+    <article class="stats-card open">
+      <span>Abertas</span>
+      <strong>{{ stats.open }}</strong>
+    </article>
+
+    <article class="stats-card progress">
+      <span>Em andamento</span>
+      <strong>{{ stats.inProgress }}</strong>
+    </article>
+
+    <article class="stats-card resolved">
+      <span>Resolvidas</span>
+      <strong>{{ stats.resolved }}</strong>
+    </article>
+
+    <article class="stats-card closed">
+      <span>Fechadas</span>
+      <strong>{{ stats.closed }}</strong>
+    </article>
+
+    <article class="stats-card critical">
+      <span>Críticas</span>
+      <strong>{{ stats.critical }}</strong>
+    </article>
+
+  </div>
+
+</section>
+
+    <div
+      class="notice success"
+      role="status"
+      *ngIf="successMessage"
+    >
+      {{ successMessage }}
+    </div>
+
+    <div
+      class="notice error"
+      role="alert"
+      *ngIf="errorMessage && !modalOpen"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <form
+      class="filter-paper"
+      [formGroup]="filterForm"
+      (ngSubmit)="searchIncidents()"
+    >
+      <div class="search-field">
+        <label for="search">
+          PROCURAR NO MURAL
+        </label>
+
+        <input
+          id="search"
+          type="search"
+          formControlName="title"
+          placeholder="Digite o nome da demanda..."
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="status-filter">
+          STATUS
+        </label>
+
+        <select
+          id="status-filter"
+          formControlName="status"
+        >
+          <option value="">Todos</option>
+          <option value="OPEN">Aberta</option>
+          <option value="IN_PROGRESS">
+            Em andamento
+          </option>
+          <option value="RESOLVED">
+            Resolvida
+          </option>
+          <option value="CLOSED">
+            Fechada
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="priority-filter">
+          PRIORIDADE
+        </label>
+
+        <select
+          id="priority-filter"
+          formControlName="priority"
+        >
+          <option value="">Todas</option>
+          <option value="LOW">Baixa</option>
+          <option value="MEDIUM">Média</option>
+          <option value="HIGH">Alta</option>
+          <option value="CRITICAL">Crítica</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button
+          type="submit"
+          class="search-button"
+          [disabled]="loading"
+        >
+          {{ loading ? 'Buscando...' : 'Pesquisar' }}
+        </button>
+
+        <button
+          type="button"
+          class="clear-button"
+          [disabled]="loading"
+          (click)="clearFilters()"
+        >
+          Limpar
+        </button>
+      </div>
+    </form>
+
+    <section
+      class="notice-board"
+      aria-label="Lista de demandas"
+    >
+      <div
+        class="loading-state"
+        *ngIf="loading"
+      >
+        <span aria-hidden="true">🔎</span>
+        <p>Procurando avisos no mural...</p>
+      </div>
+
+      <div
+        class="empty-state"
+        *ngIf="!loading && incidents.length === 0"
+      >
+        <span aria-hidden="true">📌</span>
+
+        <h2>O mural está vazio</h2>
+
+        <p>
+          Crie a primeira demanda para começar.
+        </p>
+      </div>
+
+      <article
+        class="demand-poster"
+        *ngFor="
+          let incident of incidents;
+          let index = index;
+          trackBy: trackById
+        "
+        [class.poster-yellow]="index % 4 === 0"
+        [class.poster-blue]="index % 4 === 1"
+        [class.poster-pink]="index % 4 === 2"
+        [class.poster-green]="index % 4 === 3"
+        [class.critical-poster]="incident.priority === 'CRITICAL'"
+        [class.resolved-poster]="incident.status === 'RESOLVED'"
+        [class.closed-poster]="incident.status === 'CLOSED'"
+      >
+        <span
+          class="poster-pin"
+          aria-hidden="true"
+        >
+          {{
+            index % 3 === 0
+              ? '📌'
+              : index % 3 === 1
+                ? '📎'
+                : '✦'
+          }}
+        </span>
+
+        <div class="poster-icon-actions" *ngIf="isAdmin">
+          <button
+            type="button"
+            class="pixel-icon-button edit-icon-button"
+            title="Editar demanda"
+            aria-label="Editar demanda"
+            [disabled]="isProcessing(incident)"
+            (click)="openEditModal(incident)"
+          >
+            <img
+              src="/icons/edit.png"
+              alt=""
+              aria-hidden="true"
+            />
+          </button>
+
+          <button
+            type="button"
+            class="pixel-icon-button delete-icon-button"
+            title="Excluir demanda"
+            aria-label="Excluir demanda"
+            [disabled]="isProcessing(incident)"
+            (click)="deleteIncident(incident)"
+          >
+            <img
+              src="/icons/trash.png"
+              alt=""
+              aria-hidden="true"
+            />
+          </button>
+        </div>
+
+        <span
+          class="resolved-mark"
+          *ngIf="incident.status === 'RESOLVED'"
+        >
+          RESOLVIDA
+        </span>
+
+        <span
+          class="closed-mark"
+          *ngIf="incident.status === 'CLOSED'"
+        >
+          ENCERRADA
+        </span>
+
+        <div class="poster-topline">
+          <span
+            class="priority-stamp"
+            [ngClass]="
+              'priority-' +
+              incident.priority.toLowerCase()
+            "
+          >
+            {{ priorityLabel(incident.priority) }}
+          </span>
+
+          <span class="poster-date">
+            Criada em
+            {{ incident.createdAt | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+
+        <h2>
+          {{ incident.title }}
+        </h2>
+
+        <p class="poster-description">
+          {{ incident.description }}
+        </p>
+
+        <div class="poster-details">
+          <span>
+            <strong>Categoria</strong>
+            {{ categoryLabel(incident.category) }}
+          </span>
+
+          <span>
+            <strong>Local</strong>
+            {{ incident.location || 'Não informado' }}
+          </span>
+        </div>
+
+        <footer class="poster-footer">
+          <div class="poster-status-area">
+            <span
+              class="status-stamp"
+              [ngClass]="
+                'status-' +
+                incident.status.toLowerCase()
+              "
+            >
+              {{ statusLabel(incident.status) }}
+            </span>
+
+            <small>
+              Atualizada em
+              {{ incident.updatedAt | date:'dd/MM/yyyy HH:mm' }}
+            </small>
+          </div>
+
+          <div class="poster-actions">
+            <button
+              *ngIf="isAdmin && incident.status === 'OPEN'"
+              type="button"
+              class="poster-pixel-action start-pixel-action"
+              [disabled]="isProcessing(incident)"
+              (click)="startIncident(incident)"
+            >
+              <img
+                src="/icons/start.png"
+                alt=""
+                aria-hidden="true"
+              />
+
+              <span>
+                {{
+                  isProcessing(incident)
+                    ? 'Atualizando...'
+                    : 'Iniciar'
+                }}
+              </span>
+            </button>
+
+            <button
+              *ngIf="isAdmin && incident.status === 'IN_PROGRESS'"
+              type="button"
+              class="poster-pixel-action complete-pixel-action"
+              [disabled]="isProcessing(incident)"
+              (click)="resolveIncident(incident)"
+            >
+              <img
+                src="/icons/complete.png"
+                alt=""
+                aria-hidden="true"
+              />
+
+              <span>
+                {{
+                  isProcessing(incident)
+                    ? 'Concluindo...'
+                    : 'Concluir'
+                }}
+              </span>
+            </button>
+
+            <button
+              *ngIf="isAdmin && incident.status === 'RESOLVED'"
+              type="button"
+              class="poster-pixel-action start-pixel-action"
+              [disabled]="isProcessing(incident)"
+              (click)="reopenIncident(incident)"
+            >
+              <img
+                src="/icons/start.png"
+                alt=""
+                aria-hidden="true"
+              />
+
+              <span>
+                {{
+                  isProcessing(incident)
+                    ? 'Reabrindo...'
+                    : 'Reabrir'
+                }}
+              </span>
+            </button>
+
+            <span
+              *ngIf="incident.status === 'CLOSED'"
+              class="closed-message"
+            >
+              Demanda encerrada
+            </span>
+          </div>
+        </footer>
+
+        <!-- Comentários -->
+        <section class="comments-section">
+          <button
+            type="button"
+            class="comments-toggle-button"
+            [attr.aria-expanded]="isCommentsOpen(incident.id)"
+            [attr.aria-controls]="'comments-' + incident.id"
+            (click)="toggleComments(incident)"
+          >
+            <span class="comments-toggle-icon" aria-hidden="true">
+              💬
+            </span>
+
+            <span>
+              Comentários
+            </span>
+
+            <span class="comments-count">
+              {{ getCommentCount(incident.id) }}
+            </span>
+
+            <span
+              class="comments-toggle-arrow"
+              aria-hidden="true"
+            >
+              {{
+                isCommentsOpen(incident.id)
+                  ? '▲'
+                  : '▼'
+              }}
+            </span>
+          </button>
+
+          <div
+            class="comments-panel"
+            *ngIf="isCommentsOpen(incident.id)"
+            [id]="'comments-' + incident.id"
+          >
+            <div
+              class="comments-loading"
+              *ngIf="isCommentsLoading(incident.id)"
+            >
+              Procurando anotações...
+            </div>
+
+            <div
+              class="comments-error"
+              role="alert"
+              *ngIf="commentsError[incident.id]"
+            >
+              <span>
+                {{ commentsError[incident.id] }}
+              </span>
+
+              <button
+                type="button"
+                class="retry-comments-button"
+                [disabled]="isCommentsLoading(incident.id)"
+                (click)="loadComments(incident.id)"
+              >
+                Tentar novamente
+              </button>
+            </div>
+
+            <div
+              class="comments-empty"
+              *ngIf="
+                !isCommentsLoading(incident.id) &&
+                !commentsError[incident.id] &&
+                getComments(incident.id).length === 0
+              "
+            >
+              <span aria-hidden="true">📝</span>
+
+              <p>
+                Nenhuma anotação foi deixada ainda.
+              </p>
+            </div>
+
+            <div
+              class="comments-list"
+              *ngIf="
+                !isCommentsLoading(incident.id) &&
+                getComments(incident.id).length > 0
+              "
+            >
+              <article
+                class="comment-note"
+                *ngFor="
+                  let comment of getComments(incident.id);
+                  let commentIndex = index;
+                  trackBy: trackCommentById
+                "
+                [class.comment-note-yellow]="commentIndex % 3 === 0"
+                [class.comment-note-blue]="commentIndex % 3 === 1"
+                [class.comment-note-pink]="commentIndex % 3 === 2"
+              >
+                <header class="comment-header">
+                  <strong>
+                    {{ comment.author }}
+                  </strong>
+
+                  <time
+                    [attr.datetime]="comment.createdAt"
+                  >
+                    {{ comment.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                  </time>
+                </header>
+
+                <p>
+                  {{ comment.message }}
+                </p>
+              </article>
+            </div>
+
+            <form
+              class="comment-form"
+              *ngIf="isAdmin"
+              (ngSubmit)="submitComment(incident)"
+            >
+              <label
+                class="comment-label"
+                [for]="'comment-' + incident.id"
+              >
+                DEIXAR UMA ANOTAÇÃO
+              </label>
+
+              <textarea
+                [id]="'comment-' + incident.id"
+                rows="3"
+                maxlength="2000"
+                placeholder="Escreva um comentário..."
+                [formControl]="getCommentControl(incident.id)"
+              ></textarea>
+
+              <div class="comment-form-footer">
+                <small class="comment-character-count">
+                  {{
+                    getCommentControl(incident.id).value.length
+                  }}/2000
+                </small>
+
+                <button
+                  type="submit"
+                  class="send-comment-button"
+                  [disabled]="
+                    getCommentControl(incident.id).invalid ||
+                    isCommentSending(incident.id)
+                  "
+                >
+                  {{
+                    isCommentSending(incident.id)
+                      ? 'Enviando...'
+                      : 'Comentar'
+                  }}
+                </button>
+              </div>
+
+              <small
+                class="field-error"
+                *ngIf="
+                  getCommentControl(incident.id).invalid &&
+                  getCommentControl(incident.id).touched
+                "
+              >
+                Escreva um comentário antes de enviar.
+              </small>
+            </form>
+          </div>
+        </section>
+      </article>
+    </section>
+
+    <div
+      class="pagination"
+      *ngIf="totalPages > 1"
+    >
+      <button type="button" (click)="previousPage()" [disabled]="firstPage || loading">
+        ← Anterior
+      </button>
+
+      <span>
+        Página <strong>{{ currentPage + 1 }}</strong>
+        de <strong>{{ totalPages }}</strong>
+        • {{ totalElements }} demandas
+      </span>
+
+      <button type="button" (click)="nextPage()" [disabled]="lastPage || loading">
+        Próxima →
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- Modal de criação e edição -->
+<div
+  class="modal-backdrop"
+  *ngIf="modalOpen"
+  (click)="closeIncidentModal()"
+>
+  <section
+    class="paper-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="incident-modal-title"
+    (click)="$event.stopPropagation()"
+  >
+    <span
+      class="modal-tape"
+      aria-hidden="true"
+    ></span>
+
+    <header class="modal-header">
+      <div>
+        <span class="modal-kicker">
+          {{ isEditing ? 'EDITAR AVISO' : 'NOVO AVISO' }}
+        </span>
+
+        <h2 id="incident-modal-title">
+          {{ isEditing ? 'Editar demanda' : 'Criar demanda' }}
+        </h2>
+
+        <p>
+          {{
+            isEditing
+              ? 'Atualize os dados da demanda.'
+              : 'Preencha os dados antes de prender o aviso no mural.'
+          }}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="close-button"
+        aria-label="Fechar formulário"
+        [disabled]="saving"
+        (click)="closeIncidentModal()"
+      >
+        ×
+      </button>
+    </header>
+
+    <form
+      class="incident-form"
+      [formGroup]="incidentForm"
+      (ngSubmit)="saveIncident()"
+      novalidate
+    >
+      <div class="form-field full">
+        <label for="title">
+          Título
+        </label>
+
+        <input
+          id="title"
+          type="text"
+          formControlName="title"
+          maxlength="150"
+          placeholder="Ex.: Notebook não liga"
+        />
+
+        <small
+          class="field-error"
+          *ngIf="
+            incidentForm.controls.title.invalid &&
+            incidentForm.controls.title.touched
+          "
+        >
+          Informe um título válido.
+        </small>
+      </div>
+
+      <div class="form-field full">
+        <label for="description">
+          Descrição
+        </label>
+
+        <textarea
+          id="description"
+          formControlName="description"
+          rows="5"
+          maxlength="2000"
+          placeholder="Descreva o pedido ou problema..."
+        ></textarea>
+
+        <small
+          class="field-error"
+          *ngIf="
+            incidentForm.controls.description.invalid &&
+            incidentForm.controls.description.touched
+          "
+        >
+          Informe uma descrição válida.
+        </small>
+      </div>
+
+      <div class="form-field">
+        <label for="priority">
+          Prioridade
+        </label>
+
+        <select
+          id="priority"
+          formControlName="priority"
+        >
+          <option value="LOW">Baixa</option>
+          <option value="MEDIUM">Média</option>
+          <option value="HIGH">Alta</option>
+          <option value="CRITICAL">Crítica</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="category">
+          Categoria
+        </label>
+
+        <select
+          id="category"
+          formControlName="category"
+        >
+          <option value="HARDWARE">Hardware</option>
+          <option value="SOFTWARE">Software</option>
+          <option value="NETWORK">Rede</option>
+          <option value="SECURITY">Segurança</option>
+          <option value="OTHER">Outro</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="status">
+          Status
+        </label>
+
+        <select
+          id="status"
+          formControlName="status"
+        >
+          <option value="OPEN">Aberta</option>
+          <option value="IN_PROGRESS">
+            Em andamento
+          </option>
+          <option value="RESOLVED">
+            Resolvida
+          </option>
+          <option value="CLOSED">
+            Fechada
+          </option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="location">
+          Localização
+        </label>
+
+        <input
+          id="location"
+          type="text"
+          formControlName="location"
+          maxlength="200"
+          placeholder="Ex.: Sala TI"
+        />
+
+        <small
+          class="field-error"
+          *ngIf="
+            incidentForm.controls.location.invalid &&
+            incidentForm.controls.location.touched
+          "
+        >
+          Informe a localização da demanda.
+        </small>
+      </div>
+
+      <div
+        class="notice error full"
+        role="alert"
+        *ngIf="errorMessage"
+      >
+        {{ errorMessage }}
+      </div>
+
+      <footer class="modal-actions full">
+        <button
+          type="button"
+          class="cancel-button"
+          [disabled]="saving"
+          (click)="closeIncidentModal()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="pin-button"
+          [disabled]="saving"
+        >
+          {{
+            saving
+              ? 'Salvando...'
+              : isEditing
+                ? 'Salvar alterações'
+                : 'Prender no mural'
+          }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

@@ -1,0 +1,40 @@
+
+cd incident-management-system
+docker compose down
+docker compose up --build
+
+1. Backend
+
+cd backend
+.\mvnw spring-boot:run
+
+----------------------------
+
+2. Frontend
+
+cd frontend
+ng serve
+
+----------------------------
+
+3. Swagger
+
+http://localhost:8080/swagger-ui/index.html
+
+----------------------------
+
+4. Angular
+
+http://localhost:4200
+
+----------------------------
+
+5. Git
+
+git status
+
+git add .
+
+git commit -m "mensagem"
+
+git push
